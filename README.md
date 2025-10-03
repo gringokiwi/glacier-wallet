@@ -73,8 +73,6 @@ Sign & broadcast the sweep tx from above:
 
 Lock tx (current height + 6 blocks): https://mempool.space/testnet4/tx/8bafba99843e253336993fc1849e043b0ddb6b6fdb6a8f1ccc6c726ad1881748
 
-#### Re-fetch addresses
-
 The Glacier lock is detected by the OP_RETURN created in the lock transaction:
 
 <img width="1150" height="233" alt="Screenshot 2025-10-03 at 1 21 32 PM" src="https://github.com/user-attachments/assets/184ccf6c-c141-4ae6-813e-df24f39d9fc6" />
@@ -114,9 +112,45 @@ The Glacier lock is detected by the OP_RETURN created in the lock transaction:
 }
 ```
 
-## Add more funds
+### Add more funds
 
-More funds can be added at any time:
+More funds can be added at any time, e.g.: https://mempool.space/testnet4/tx/866733bff5c65f7cff29fd812e98f0e7e92ef15654cb7b2e3f28b91f9be9f3c4
+
+This is reflected upon refresh:
+
+```json
+{
+  "xpub": "xpub6EChyDXBPAwVg4HGwLJzGGZDm8P5LeCrk2v2AS7NkaW2i1PLNWtHmnwafVVjzM3L9n8xHohj3kcDM5VrMvJZ4YXF651voKhVBmbD9tGE77b",
+  "addresses": [
+    {
+      "network": "testnet4",
+      "address": "tb1qy5r8sapl0zfpyq4tnns8y9daqejy2ah32kckjk",
+      "path": "m/84'/1'/0'/0/0",
+      "index": 0,
+      "used": true,
+      "balance": 0
+    },
+    {
+      "network": "testnet4",
+      "address": "tb1q6rufkmhshd585vn5sns7x2qeryxzqav6nap9g6",
+      "path": "m/84'/1'/0'/0/1",
+      "index": 1,
+      "used": false,
+      "balance": 0
+    }
+  ],
+  "glacierLocks": [
+    {
+      "network": "testnet4",
+      "address": "2N9ryWMiekbqCp6rmGphgmybRdyPwSY93Pv",
+      "lock_height": 104852,
+      "spendable": false,
+      "balance": 989000
+    }
+  ],
+  "signedGlacierUnlocks": []
+}
+```
 
 
 ## Unlock Glacier lock
