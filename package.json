@@ -1,0 +1,36 @@
+{
+  "name": "glacier-wallet",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gringokiwi/glacier-wallet.git"
+  },
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "nodemon src/index.ts",
+    "build": "tsc",
+    "serve": "ts-node src/index.ts"
+  },
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/gringokiwi/glacier-wallet/issues"
+  },
+  "homepage": "https://github.com/gringokiwi/glacier-wallet#readme",
+  "dependencies": {
+    "axios": "^1.12.2",
+    "bip32": "^5.0.0",
+    "bip39": "^3.1.0",
+    "bitcoinjs-lib": "^7.0.0",
+    "express": "^5.1.0",
+    "tiny-secp256k1": "^2.2.4"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.6.2",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}
