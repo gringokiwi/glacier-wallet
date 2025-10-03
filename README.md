@@ -9,6 +9,8 @@ Bitcoin supports the ability to 'timelock' your ability to spend coins until som
 
 ### Request addresses for a fresh BIP39 seed
 
+Like most wallet, Glacier will derive a keypair from your seed phrase, and loop through your native Segwit addresses using standard derivation paths until it finds an unused address.
+
 ```json
 {
   "xpub": "xpub6EChyDXBPAwVg4HGwLJzGGZDm8P5LeCrk2v2AS7NkaW2i1PLNWtHmnwafVVjzM3L9n8xHohj3kcDM5VrMvJZ4YXF651voKhVBmbD9tGE77b",
@@ -22,14 +24,15 @@ Bitcoin supports the ability to 'timelock' your ability to spend coins until som
       "balance": 0
     }
   ],
-  "glacierLocks": [],
-  "signedGlacierUnlocks": []
+  "glacierLocks": []
 }
 ```
 
-### Fund address
+### Fund wallet
 
-Address funding tx: https://mempool.space/testnet4/tx/d5f0c7bd13fe3ce8720cd5d1b02625eba5970ced4d4099ec9ea6dd209287209a
+After funding your wallet, a new Glacier lock will be generated (custom time), with a PSBT sweeping funds to a P2SH CTLV address. An OP_RETURN is also created with the text `GLACIER <UNLOCK_BLOCK_HEIGHT>`
+
+Demo funding tx: https://mempool.space/testnet4/tx/d5f0c7bd13fe3ce8720cd5d1b02625eba5970ced4d4099ec9ea6dd209287209a
 
 ```json
 {
@@ -53,7 +56,6 @@ Address funding tx: https://mempool.space/testnet4/tx/d5f0c7bd13fe3ce8720cd5d1b0
     }
   ],
   "glacierLocks": [],
-  "signedGlacierUnlocks": [],
   "newGlacierLock": {
     "network": "testnet4",
     "address": "2N9ryWMiekbqCp6rmGphgmybRdyPwSY93Pv",
@@ -67,15 +69,17 @@ Address funding tx: https://mempool.space/testnet4/tx/d5f0c7bd13fe3ce8720cd5d1b0
 
 ### Create Glacier lock
 
-Sign & broadcast the sweep tx from above:
+The lock tx from above can be signed from a wallet using the same seed phrase:
 
 <img width="926" height="699" alt="Screenshot 2025-10-03 at 1 18 12 PM" src="https://github.com/user-attachments/assets/7f65128c-842d-4195-b79a-01e30c44f9e1" />
 
-Lock tx (current height + 6 blocks): https://mempool.space/testnet4/tx/8bafba99843e253336993fc1849e043b0ddb6b6fdb6a8f1ccc6c726ad1881748
-
-The Glacier lock is detected by the OP_RETURN created in the lock transaction:
+Demo tx (current height + 6 blocks): https://mempool.space/testnet4/tx/8bafba99843e253336993fc1849e043b0ddb6b6fdb6a8f1ccc6c726ad1881748
 
 <img width="1150" height="233" alt="Screenshot 2025-10-03 at 1 21 32 PM" src="https://github.com/user-attachments/assets/184ccf6c-c141-4ae6-813e-df24f39d9fc6" />
+
+### Refresh addresses
+
+The Glacier lock is detected via the OP_RETURN created in the lock transaction:
 
 
 ```json
@@ -107,14 +111,13 @@ The Glacier lock is detected by the OP_RETURN created in the lock transaction:
       "spendable": false,
       "balance": 499000
     }
-  ],
-  "signedGlacierUnlocks": []
+  ]
 }
 ```
 
 ### Add more funds
 
-More funds can be added at any time, e.g.: https://mempool.space/testnet4/tx/866733bff5c65f7cff29fd812e98f0e7e92ef15654cb7b2e3f28b91f9be9f3c4
+More funds can be added to the lock at any time, e.g.: https://mempool.space/testnet4/tx/866733bff5c65f7cff29fd812e98f0e7e92ef15654cb7b2e3f28b91f9be9f3c4
 
 This is reflected upon refresh:
 
@@ -148,14 +151,54 @@ This is reflected upon refresh:
       "balance": 989000
     }
   ],
-  "signedGlacierUnlocks": []
 }
 ```
 
-
 ## Unlock Glacier lock
 
-Pending...
+Once the Glacier lock has expired, a PSBT will be generated for the unlock, sweeping all funds to your next unused address:
+
+<img width="926" height="699" alt="Screenshot 2025-10-03 at 1 55 48 PM" src="https://github.com/user-attachments/assets/20dc0c56-257b-42ed-90d6-4e95c6f5fef4" />
+
+
+```json
+{
+  "xpub": "xpub6EChyDXBPAwVg4HGwLJzGGZDm8P5LeCrk2v2AS7NkaW2i1PLNWtHmnwafVVjzM3L9n8xHohj3kcDM5VrMvJZ4YXF651voKhVBmbD9tGE77b",
+  "addresses": [
+    {
+      "network": "testnet4",
+      "address": "tb1qy5r8sapl0zfpyq4tnns8y9daqejy2ah32kckjk",
+      "path": "m/84'/1'/0'/0/0",
+      "index": 0,
+      "used": true,
+      "balance": 0
+    },
+    {
+      "network": "testnet4",
+      "address": "tb1q6rufkmhshd585vn5sns7x2qeryxzqav6nap9g6",
+      "path": "m/84'/1'/0'/0/1",
+      "index": 1,
+      "used": false,
+      "balance": 0
+    }
+  ],
+  "glacierLocks": [
+    {
+      "network": "testnet4",
+      "address": "2N9ryWMiekbqCp6rmGphgmybRdyPwSY93Pv",
+      "lock_height": 104852,
+      "spendable": true,
+      "balance": 989000,
+      "sweep_tx": "70736274ff01007b0200000002481788d16a726ccc1c8f6adb6f6bdb0d3b049e84c13f993633253e8499baaf8b000000000000000000c4f3e99b1fb9283f2e7bcb5456f12ee9e7f0982e81fd29ff7c5fc6f5bf3367860100000000000000000160130f0000000000160014d0f89b6ef0bb687a327484e1e32819190c20759a94990100000100d9020000000001019a20879220dda69eec99404ded0c97a5eb2526b0d1d50c72e83cfe13bdc7f0d50000000000ffffffff02389d07000000000017a914b644e60ccde5f7118b2bfbb6e41527a529317601870000000000000000106a0e474c4143494552203130343835320247304402202ebff17277517082fcc0c6f35557b8711fcf4c5fb039d394c28f1215eabd960e02203a104ea18b48d81cafef17db6f516d7753be0914e79af9de6f07dbefaccc7d76012103a54b070c364517ce31f7277dcd8a44811b0daa12c88ffc1efd63ee9b7177874d0000000001041f03949901b17576a914004b9268f70d3a5073bc526ee9d2949d09e7627e88ac000100df02000000000101df2227b1826795428c86173aba353082fa49cff27d2d9c3540838d466a492c310000000000fdffffff02f023000000000000160014b1e558563e47123f5600292a931282d57cefcd00107a07000000000017a914b644e60ccde5f7118b2bfbb6e41527a529317601870247304402202925fd3322fd524c617bb35be835233d3d3ef5c2bfd41dcd194ef5663bea1a8902203946a52d25cfec23fb049f25f66f7ff52c090b651594cdec4a8edab1f6aafca201210361535acf892f5dce1265a4033ce4fe047d1a73b3e4062c99beb761146242685c8f99010001041f03949901b17576a914004b9268f70d3a5073bc526ee9d2949d09e7627e88ac0000"
+    }
+  ]
+}
+```
+
+Demo unlock tx: https://mempool.space/testnet4/tx/7628233fefddfa916a85c50020a33781d1fc2ffe16b26fd2a48c365d5ace73e3
+
+<img width="1140" height="747" alt="Screenshot 2025-10-03 at 1 56 40 PM" src="https://github.com/user-attachments/assets/b8f9b2b1-3185-44e5-80ec-babe82d1e77f" />
+
 
 ## Electrum Plugin
 
