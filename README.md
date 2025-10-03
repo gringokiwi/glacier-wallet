@@ -198,6 +198,9 @@ Demo unlock tx: https://mempool.space/testnet4/tx/7628233fefddfa916a85c50020a337
 
 <img width="1140" height="747" alt="Screenshot 2025-10-03 at 1 56 40 PM" src="https://github.com/user-attachments/assets/b8f9b2b1-3185-44e5-80ec-babe82d1e77f" />
 
+## Recovery
+
+If you mistakenly send more funds to the same Glacier lock, you can sweep them anytime, e.g. https://mempool.space/testnet4/tx/539f858498f77d1c83800b315d0ef7437c8a4229ea33dccbadb9a9ac3188ce26
 
 ## Electrum Plugin
 
