@@ -158,9 +158,6 @@ This is reflected upon refresh:
 
 Once the Glacier lock has expired, a PSBT will be generated for the unlock, sweeping all funds to your next unused address:
 
-<img width="926" height="699" alt="Screenshot 2025-10-03 at 1 55 48 PM" src="https://github.com/user-attachments/assets/20dc0c56-257b-42ed-90d6-4e95c6f5fef4" />
-
-
 ```json
 {
   "xpub": "xpub6EChyDXBPAwVg4HGwLJzGGZDm8P5LeCrk2v2AS7NkaW2i1PLNWtHmnwafVVjzM3L9n8xHohj3kcDM5VrMvJZ4YXF651voKhVBmbD9tGE77b",
@@ -194,6 +191,8 @@ Once the Glacier lock has expired, a PSBT will be generated for the unlock, swee
   ]
 }
 ```
+
+<img width="1250" height="820" alt="Screenshot 2025-10-03 at 2 00 57 PM" src="https://github.com/user-attachments/assets/07802977-91e2-4366-adbf-f004dce61254" />
 
 Demo unlock tx: https://mempool.space/testnet4/tx/7628233fefddfa916a85c50020a33781d1fc2ffe16b26fd2a48c365d5ace73e3
 
