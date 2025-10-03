@@ -1,9 +1,13 @@
 
 <img width="1278" height="729" alt="Screenshot 2025-10-03 at 1 10 57 PM" src="https://github.com/user-attachments/assets/37c012c9-755a-4e05-bba2-1b9dbdb2c5cf" />
 
-# Glacier Wallet - Demo
+# Glacier Wallet
 
-## Request addresses for a fresh BIP39 seed
+Bitcoin supports the ability to 'timelock' your ability to spend coins until some point in the future. Unfortunately, it is quite hard to set up with existing software. Glacier Wallet makes it simple.
+
+## Demo
+
+### Request addresses for a fresh BIP39 seed
 
 ```json
 {
@@ -23,7 +27,7 @@
 }
 ```
 
-## Fund address
+### Fund address
 
 Address funding tx: https://mempool.space/testnet4/tx/d5f0c7bd13fe3ce8720cd5d1b02625eba5970ced4d4099ec9ea6dd209287209a
 
@@ -61,7 +65,7 @@ Address funding tx: https://mempool.space/testnet4/tx/d5f0c7bd13fe3ce8720cd5d1b0
 }
 ```
 
-## Create Glacier lock
+### Create Glacier lock
 
 Sign & broadcast the sweep tx from above:
 
@@ -69,7 +73,7 @@ Sign & broadcast the sweep tx from above:
 
 Lock tx (current height + 6 blocks): https://mempool.space/testnet4/tx/8bafba99843e253336993fc1849e043b0ddb6b6fdb6a8f1ccc6c726ad1881748
 
-### Re-fetch addresses
+#### Re-fetch addresses
 
 The Glacier lock is detected by the OP_RETURN created in the lock transaction:
 
@@ -110,6 +114,18 @@ The Glacier lock is detected by the OP_RETURN created in the lock transaction:
 }
 ```
 
-### Unlock Glacier lock
+## Add more funds
+
+More funds can be added at any time:
+
+
+## Unlock Glacier lock
 
 Pending...
+
+## Electrum Plugin
+
+[@Ampersand](https://github.com/Amperstrand/) has developed an Electrum plugin, one-shotted with an LLM ([context](https://gist.github.com/Amperstrand/401c397fc7ba579779eb14f25b5bd86d))
+
+![photo_2025-10-03_13-18-52](https://github.com/user-attachments/assets/9f8d4310-d63a-4392-aa34-48bdad640bcd)
+
