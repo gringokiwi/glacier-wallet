@@ -13,18 +13,19 @@ Like most wallet, Glacier will derive a keypair from your seed phrase, and loop 
 
 ```json
 {
-  "xpub": "xpub6EChyDXBPAwVg4HGwLJzGGZDm8P5LeCrk2v2AS7NkaW2i1PLNWtHmnwafVVjzM3L9n8xHohj3kcDM5VrMvJZ4YXF651voKhVBmbD9tGE77b",
+  "xpub": "xpub6CXDiESz32DzFqhUkbPRDGMJqVeXkayxprMa3esG7WPFVM9WcPZp1eAxpREYMU7ZfFcY64TKHZr5yUrp1WLCehQecPNi8h3SE1xhpG5XLnD",
   "addresses": [
     {
+      "label": "Receive Address #0 (New)",
       "network": "testnet4",
-      "address": "tb1qy5r8sapl0zfpyq4tnns8y9daqejy2ah32kckjk",
+      "address": "tb1qzrtmctvzju33mqtf6tdmpq0n7w7hk4jcyjnasp",
       "path": "m/84'/1'/0'/0/0",
       "index": 0,
       "used": false,
-      "balance": 0
+      "balance": 0,
+      "spendable": true
     }
-  ],
-  "glacierLocks": []
+  ]
 }
 ```
 
@@ -32,38 +33,34 @@ Like most wallet, Glacier will derive a keypair from your seed phrase, and loop 
 
 After funding your wallet, a new Glacier lock will be generated (custom time), with a PSBT sweeping funds to a P2SH CTLV address. An OP_RETURN is also created with the text `GLACIER <UNLOCK_BLOCK_HEIGHT>`
 
-Demo funding tx: https://mempool.space/testnet4/tx/d5f0c7bd13fe3ce8720cd5d1b02625eba5970ced4d4099ec9ea6dd209287209a
+Demo funding tx: https://mempool.space/testnet4/tx/5d38022e14fc99e21f80844c24f094eb48cde5ccee120955abbfcf1ecb543f25
 
 ```json
 {
-  "xpub": "xpub6EChyDXBPAwVg4HGwLJzGGZDm8P5LeCrk2v2AS7NkaW2i1PLNWtHmnwafVVjzM3L9n8xHohj3kcDM5VrMvJZ4YXF651voKhVBmbD9tGE77b",
+  "xpub": "xpub6CXDiESz32DzFqhUkbPRDGMJqVeXkayxprMa3esG7WPFVM9WcPZp1eAxpREYMU7ZfFcY64TKHZr5yUrp1WLCehQecPNi8h3SE1xhpG5XLnD",
   "addresses": [
     {
+      "label": "Receive Address #0 (Used)",
       "network": "testnet4",
-      "address": "tb1qy5r8sapl0zfpyq4tnns8y9daqejy2ah32kckjk",
+      "address": "tb1qzrtmctvzju33mqtf6tdmpq0n7w7hk4jcyjnasp",
       "path": "m/84'/1'/0'/0/0",
       "index": 0,
       "used": true,
-      "balance": 500000
+      "balance": 50000,
+      "spendable": true
     },
     {
+      "label": "Receive Address #1 (New)",
       "network": "testnet4",
-      "address": "tb1q6rufkmhshd585vn5sns7x2qeryxzqav6nap9g6",
+      "address": "tb1q0zc4c86ucvw24qqwt59sch58mmw2gsv5k69mcy",
       "path": "m/84'/1'/0'/0/1",
       "index": 1,
       "used": false,
-      "balance": 0
+      "balance": 0,
+      "spendable": true
     }
   ],
-  "glacierLocks": [],
-  "newGlacierLock": {
-    "network": "testnet4",
-    "address": "2N9ryWMiekbqCp6rmGphgmybRdyPwSY93Pv",
-    "lock_height": 104852,
-    "spendable": false,
-    "balance": 499000,
-    "sweep_tx": "70736274ff01006c02000000019a20879220dda69eec99404ded0c97a5eb2526b0d1d50c72e83cfe13bdc7f0d50000000000ffffffff02389d07000000000017a914b644e60ccde5f7118b2bfbb6e41527a529317601870000000000000000106a0e474c414349455220313034383532000000000001011f20a1070000000000160014250678743f78921202ab9ce07215bd06644576f1000000"
-  }
+  "newLockPsbt": "70736274ff01006c0200000001253f54cb1ecfbfab550912eecce5cd48eb94f0244c84801fe299fc142e02385d0100000000ffffffff020000000000000000106a0e474c41434945522031303439383668bf00000000000017a91428d33c9c4697d495960f7a35e8c2e61a109b268387000000000001011f50c300000000000016001410d7bc2d8297231d8169d2dbb081f3f3bd7b5658000000"
 }
 ```
 
