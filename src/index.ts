@@ -35,7 +35,7 @@ const getAddresses = async (xpub: string, count: number): Promise<{
 
   const currentHeight = await mempoolApi.getCurrentHeight();
   const { psbt: newLockPsbt, lockAddress: newLockAddress } = glacier.createNewLockPsbt(currentHeight + 2, parent);
-  const addresses = new Set<Address>();
+  const addresses = new Map<string, Address>();
   let lastAddress: Address | undefined;
   const transactions = new Set<Transaction>();
 
@@ -68,7 +68,7 @@ const getAddresses = async (xpub: string, count: number): Promise<{
 
       if (!used) {
         lastAddress = data;
-        addresses.add(data);
+        addresses.set(address, data);
         continue;
       }
 
@@ -94,7 +94,7 @@ const getAddresses = async (xpub: string, count: number): Promise<{
       }
 
       lastAddress = data;
-      addresses.add(data);
+      addresses.set(address, data);
     }
   }
 
@@ -122,7 +122,7 @@ const getAddresses = async (xpub: string, count: number): Promise<{
       balance,
       spendable
     };
-    addresses.add(data);
+    addresses.set(lockAddress, data);
 
     // If the lock is spendable, add its UTXOs to the unlock PSBT
     if (balance && spendable) {
@@ -160,7 +160,7 @@ const getAddresses = async (xpub: string, count: number): Promise<{
 
   // Complete unlock PSBT if we have any inputs
   if (unlockPsbt.inputCount > 0) {
-    const sweepAddress = Array.from(addresses).find(data => !data.used)?.address;
+    const sweepAddress = Array.from(addresses.values()).find(data => !data.used)?.address;
     if (!sweepAddress) throw new Error('No unused address available for sweeping GLACIER locks');
     const totalToSweep = unlockValue - 1000n;
     unlockPsbt.addOutput({
@@ -171,7 +171,7 @@ const getAddresses = async (xpub: string, count: number): Promise<{
   }
 
   return {
-    addresses: Array.from(addresses),
+    addresses: Array.from(addresses.values()),
     newLockPsbt: newLockPsbtHex,
     unlockPsbt: unlockPsbtHex,
     unlockIndices: unlockIndices.length ? unlockIndices : undefined
@@ -180,6 +180,186 @@ const getAddresses = async (xpub: string, count: number): Promise<{
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Helper function to generate QR code URLs
+const generateQRCodeUrl = (address: string, size: number = 200): string => {
+  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${address}`;
+};
+
+// Helper function to generate HTML for addresses
+const generateAddressHTML = (address: Address): string => {
+  const qrCodeUrl = generateQRCodeUrl(address.address);
+  const explorerUrl = NETWORK === 'testnet4' ?
+    `https://mempool.space/testnet4/address/${address.address}` :
+    `https://mempool.space/address/${address.address}`;
+  const statusClass = address.spendable ? 'spendable' : 'locked';
+  const hiddenClass = address.used && address.spendable ? 'hidden' : '';
+  const statusText = address.spendable ? 'Spendable' : 'Locked';
+  const balanceText = address.balance > 0 ? `${address.balance} sats` : '0 sats';
+  const unlockTxLink = address.unlock_tx ?
+    `<p><a href="${address.unlock_tx}" target="_blank">Unlock Transaction</a></p>` : '';
+
+  return `
+    <div class="address-card ${hiddenClass}">
+      <h3>${address.label}</h3>
+      <p class="address-path">${address.path}</p>
+      <img src="${qrCodeUrl}" alt="QR Code for ${address.address}" class="qr-code">
+      <p class="address-text">${address.address}</p>
+      <div class="address-details">
+        <span class="balance">Balance: ${balanceText}</span>
+        <span class="status ${statusClass}">${statusText}</span>
+      </div>
+      ${unlockTxLink}
+      <p><a href="${explorerUrl}" target="_blank">View on Explorer</a></p>
+    </div>
+  `;
+};
+
+// Helper function to generate HTML response
+const generateHTMLResponse = (xpub: string, addresses: Address[], newLockPsbt?: string): string => {
+  const addressCards = addresses.map(address => generateAddressHTML(address)).join('');
+  const psbtSection = newLockPsbt ?
+    `<div class="psbt-section">
+      <h2>Lock Transaction PSBT</h2>
+      <textarea rows="5" style="width: 100%;">${newLockPsbt}</textarea>
+    </div>` : '';
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title🧊 Glacier Wallet</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          margin: 0;
+          padding: 20px;
+          background-color: #bff3ffff;
+        }
+        .container {
+          max-width: 1200px;
+          margin: 0 auto;
+          text-align: center;
+        }
+        h1 {
+          color: #333;
+          background-color: #e0f7fa;
+          border-radius: 8px;
+          display: inline-block;
+          padding: 10px 20px;
+        }
+        .xpub {
+          background-color: #fff;
+          padding: 15px;
+          border-radius: 5px;
+          margin: 20px 0;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .address-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+          gap: 20px;
+          margin: 20px 0;
+        }
+        .address-card {
+          background-color: #fff;
+          padding: 15px;
+          border-radius: 5px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .hidden {
+          opacity: 0.5;
+        }
+        .address-card h3 {
+          margin: 0 0 10px;
+          color: #333;
+        }
+        .address-path {
+          font-size: 0.9em;
+          color: #666;
+          margin: 0 0 15px;
+        }
+        .qr-code {
+          display: block;
+          margin: 0 auto 15px;
+          width: 200px;
+          height: 200px;
+        }
+        .address-text {
+          font-family: monospace;
+          font-size: 1em;
+          word-break: break-all;
+          margin: 10px 0;
+          padding: 8px;
+          background-color: #f8f8f8;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+        }
+        .address-details {
+          display: flex;
+          justify-content: space-between;
+          margin: 15px 0;
+        }
+        .balance {
+          font-weight: bold;
+          color: #333;
+        }
+        .status {
+          padding: 3px 8px;
+          border-radius: 4px;
+          font-size: 0.8em;
+          font-weight: bold;
+          text-transform: uppercase;
+        }
+        .spendable {
+          background-color: #d4edda;
+          color: #155724;
+        }
+        .locked {
+          background-color: #f8d7da;
+          color: #721c24;
+        }
+        .psbt-section {
+          margin: 20px 0;
+          background-color: #fff;
+          padding: 15px;
+          border-radius: 5px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .psbt-section textarea {
+          margin-top: 10px;
+          font-family: monospace;
+          padding: 10px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+        }
+        .error {
+          color: #721c24;
+          background-color: #f8d7da;
+          padding: 15px;
+          border-radius: 5px;
+          margin: 20px 0;
+        }
+        @media (max-width: 768px) {
+          .address-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h1>🧊 Glacier Wallet</h1>
+        <div class="xpub">
+          <p>Extended Public Key (xpub): <code>${xpub}</code></p>
+        </div>
+        ${addressCards ? `<div class="address-grid">${addressCards}</div>` : ''}
+        ${psbtSection}
+      </div>
+    </body>
+    </html>
+  `;
+};
 
 app.get('/addresses', async (req: Request, res: Response) => {
   const seed = bip39.mnemonicToSeedSync(MNEMONIC_PHRASE);
@@ -220,17 +400,24 @@ app.get('/addresses', async (req: Request, res: Response) => {
           return { ...address, balance: 0, unlock_tx: `https://mempool.space/testnet4/tx/${tx.getId()}` };
         }
         return address;
-      })
+      });
     }
 
-    res.send(`<html><pre>${JSON.stringify({
-      xpub,
-      addresses,
-      newLockPsbt
-    }, null, 2)}</pre></html>`);
+    // Generate HTML with QR codes
+    const html = generateHTMLResponse(xpub, addresses, newLockPsbt);
+    res.send(html);
   } catch (error) {
     console.error('Error generating addresses:', error);
-    res.status(500).json({ error: 'Failed to generate addresses' });
+    res.status(500).send(`
+      <html>
+        <body>
+          <div class="error">
+            <h2>Error</h2>
+            <p>Failed to generate addresses: ${error}</p>
+          </div>
+        </body>
+      </html>
+    `);
   }
 });
 
