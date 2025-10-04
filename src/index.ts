@@ -210,8 +210,8 @@ const generateAddressHTML = (address: Address): string => {
   const explorerUrl = NETWORK === 'testnet4' ?
     `https://mempool.space/testnet4/address/${address.address}` :
     `https://mempool.space/address/${address.address}`;
-  const statusClass = !address.used ? 'active' : 'expired';
-  const hiddenClass = address.used && address.spendable && !address.balance ? 'hidden' : '';
+  const statusClass = !address.used || !address.spendable ? 'active' : 'expired';
+  const hiddenClass = address.used && address.spendable ? 'hidden' : '';
   const statusText = !address.used || !address.spendable ? 'Active' : address.change_index === 3 ? 'Expired' : 'Used';
   const balanceText = address.balance > 0 ? `${address.balance} sats` : '0 sats';
   const unlockTxLink = address.unlock_tx ?
@@ -288,7 +288,7 @@ const generateHTMLResponse = (xpub: string, addresses: Address[], newLockPsbt?: 
           box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .hidden {
-          opacity: 0.5;
+          display:none;
         }
         .address-card h3 {
           margin: 0 0 10px;
