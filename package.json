@@ -13,7 +13,6 @@
     "build": "tsc",
     "serve": "ts-node src/index.ts"
   },
-  "type": "module",
   "bugs": {
     "url": "https://github.com/gringokiwi/glacier-wallet/issues"
   },
