@@ -5,6 +5,22 @@
 
 Bitcoin supports the ability to 'timelock' your ability to spend coins until some point in the future. Unfortunately, it is quite hard to set up with existing software. Glacier Wallet makes it simple.
 
+## Web UI
+
+<img width="1141" height="839" alt="Screenshot 2025-10-04 at 4 49 34 PM" src="https://github.com/user-attachments/assets/19991ec2-6e70-4365-a454-85d3933f6076" />
+
+## Mobile App
+
+See [@robertclarkson/glacier-wallet](https://github.com/robertclarkson/glacier-wallet)
+
+## Electrum Plugin
+
+[@Ampersand](https://github.com/Amperstrand/) has developed an Electrum plugin, one-shotted with an LLM ([context](https://gist.github.com/Amperstrand/401c397fc7ba579779eb14f25b5bd86d))
+
+![photo_2025-10-04_14-06-17](https://github.com/user-attachments/assets/ef221fdc-eec9-418e-a692-ebe445d548d9)
+![photo_2025-10-04_14-07-12](https://github.com/user-attachments/assets/83b65013-3ebe-46b6-8a5e-48e8c3df592a)
+
+
 ## Demo
 
 ### Request addresses for a fresh BIP39 seed
@@ -220,10 +236,4 @@ Once the Glacier lock has expired, a PSBT will be generated for the unlock, swee
 ## Recovery
 
 If you mistakenly send more funds to the same Glacier lock, you can sweep them anytime, e.g. https://mempool.space/testnet4/tx/9366a86f672a437d5e94d28bce9abd79dddc68bfdbaa7528eaf0265d7669e2d8
-
-## Electrum Plugin
-
-[@Ampersand](https://github.com/Amperstrand/) has developed an Electrum plugin, one-shotted with an LLM ([context](https://gist.github.com/Amperstrand/401c397fc7ba579779eb14f25b5bd86d))
-
-![photo_2025-10-03_13-18-52](https://github.com/user-attachments/assets/9f8d4310-d63a-4392-aa34-48bdad640bcd)
 
