@@ -27,7 +27,8 @@ type Address = {
 const getAddresses = async (xpub: string, count: number): Promise<{
   addresses: Address[],
   newLockPsbt?: string,
-  unlockPsbt?: string
+  unlockPsbt?: string,
+  unlockIndices?: number[]
 }> => {
   const parent = bip32Instance.fromBase58(xpub);
   const config = networkConfig[NETWORK];
@@ -98,6 +99,8 @@ const getAddresses = async (xpub: string, count: number): Promise<{
   }
 
   const unlockPsbt = new bitcoin.Psbt({ network: config.network });
+  let unlockIndices = [];
+  let unlockValue = 0n;
 
   // Loop over any GLACIER lock transactions found, add to glacierLocks set
   for (const tx of transactions) {
@@ -110,7 +113,7 @@ const getAddresses = async (xpub: string, count: number): Promise<{
     const path = `${config.path}/${changeIndex}/${lockHeight}`;
     const spendable = currentHeight >= lockHeight;
     const data: Address = {
-      label: `Glacier Lock (${lockHeight})`,
+      label: `Glacier Lock (${lockHeight}) - ${spendable ? 'Expired' : 'Active'}`,
       network: NETWORK,
       address: lockAddress,
       path,
@@ -124,7 +127,6 @@ const getAddresses = async (xpub: string, count: number): Promise<{
     // If the lock is spendable, add its UTXOs to the unlock PSBT
     if (balance && spendable) {
       const utxos = await mempoolApi.getAddressUtxos(lockAddress);
-      let totalInput = 0n;
       for (const utxo of utxos) {
         const txHex = await mempoolApi.getTransactionHex(utxo.txid);
         unlockPsbt.addInput({
@@ -134,7 +136,8 @@ const getAddresses = async (xpub: string, count: number): Promise<{
           nonWitnessUtxo: bitcoin.Transaction.fromHex(txHex).toBuffer(),
           redeemScript
         });
-        totalInput += BigInt(utxo.value);
+        unlockValue += BigInt(utxo.value);
+        unlockIndices.push(lockHeight);
       }
       const newLockTime = Math.max(unlockPsbt.locktime ?? 0, lockHeight);
       unlockPsbt.setLocktime(newLockTime);
@@ -159,7 +162,7 @@ const getAddresses = async (xpub: string, count: number): Promise<{
   if (unlockPsbt.inputCount > 0) {
     const sweepAddress = Array.from(addresses).find(data => !data.used)?.address;
     if (!sweepAddress) throw new Error('No unused address available for sweeping GLACIER locks');
-    const totalToSweep = unlockPsbt.data.inputs.reduce((sum, input) => sum + input.witnessUtxo!.value, 0n) - 1000n;
+    const totalToSweep = unlockValue - 1000n;
     unlockPsbt.addOutput({
       address: sweepAddress,
       value: totalToSweep
@@ -170,7 +173,8 @@ const getAddresses = async (xpub: string, count: number): Promise<{
   return {
     addresses: Array.from(addresses),
     newLockPsbt: newLockPsbtHex,
-    unlockPsbt: unlockPsbtHex
+    unlockPsbt: unlockPsbtHex,
+    unlockIndices: unlockIndices.length ? unlockIndices : undefined
   }
 }
 
@@ -186,12 +190,12 @@ app.get('/addresses', async (req: Request, res: Response) => {
 
   try {
     const count = parseInt(req.query.count as string) || 10;
-    let { addresses, newLockPsbt, unlockPsbt } = await getAddresses(xpub, count);
+    let { addresses, newLockPsbt, unlockPsbt, unlockIndices } = await getAddresses(xpub, count);
 
-    if (unlockPsbt) {
+    if (unlockPsbt && unlockIndices) {
       const psbt = bitcoin.Psbt.fromHex(unlockPsbt, { network: config.network });
       for (const [index, input] of psbt.data.inputs.entries()) {
-        psbt.signInput(index, parent);
+        psbt.signInput(index, parent.derive(3).derive(unlockIndices[index]));
         psbt.finalizeInput(index, () => {
           const partialSig = input.partialSig?.[0];
           if (!partialSig) throw new Error('Missing signature');
@@ -213,7 +217,7 @@ app.get('/addresses', async (req: Request, res: Response) => {
       await mempoolApi.broadcastTransaction(tx.toHex());
       addresses = addresses.map(address => {
         if (address.spendable && address.balance > 0) {
-          return { ...address, balance: 0, unlock_tx: tx.getId() };
+          return { ...address, balance: 0, unlock_tx: `https://mempool.space/testnet4/tx/${tx.getId()}` };
         }
         return address;
       })
