@@ -16,6 +16,12 @@ export type AddressSummary = {
 
 export type Transaction = {
   txid: string,
+  vin: Array<{
+    prevout: {
+      scriptpubkey_type: string,
+      scriptpubkey_address: string
+    } | null,
+  }> | null,
   vout: Array<{
     scriptpubkey_asm: string,
     scriptpubkey_type: "op_return",

@@ -17,7 +17,8 @@ type Address = {
   network: Network;
   address: string;
   path: string;
-  index: number;
+  change_index: number;
+  address_index: number;
   used: boolean;
   balance: number;
   spendable: boolean;
@@ -40,12 +41,12 @@ const getAddresses = async (xpub: string, count: number): Promise<{
   const transactions = new Set<Transaction>();
 
   // Loop over standard addresses, add any outputs to the new lock PSBT
-  for (let i = 0; i < count; i++) {
+  for (let addressIndex = 0; addressIndex < count; addressIndex++) {
     if (!lastAddress || (lastAddress && lastAddress.used)) {
       const changeIndex = 0; // TODO: Support change addresses
-      const path = `${config.path}/${changeIndex}/${i}`;
+      const path = `${config.path}/${changeIndex}/${addressIndex}`;
       const p2wpkh = bitcoin.payments.p2wpkh({
-        pubkey: parent.derive(changeIndex).derive(i).publicKey,
+        pubkey: parent.derive(changeIndex).derive(addressIndex).publicKey,
         network: config.network
       });
 
@@ -56,11 +57,12 @@ const getAddresses = async (xpub: string, count: number): Promise<{
       const { used, balance } = await mempoolApi.getAddressBalance(address);
 
       let data: Address = {
-        label: `Receive Address #${i} (${used ? 'Used' : 'New'})`,
+        label: `Receive Address #${addressIndex} (${used ? 'Used' : 'New'})`,
         network: NETWORK,
         address,
         path,
-        index: i,
+        change_index: changeIndex,
+        address_index: addressIndex,
         used,
         balance,
         spendable: true
@@ -89,7 +91,8 @@ const getAddresses = async (xpub: string, count: number): Promise<{
       const addressTxs = await mempoolApi.getAddressTransactions(address);
 
       for (const tx of addressTxs) {
-        if (!glacier.isLockTransaction(tx)) continue;
+        const vinAddress = tx.vin?.find(v => v.prevout?.scriptpubkey_type.includes("p2sh"))?.prevout?.scriptpubkey_address;
+        if (!(vinAddress || glacier.isLockTransaction(tx))) continue;
         transactions.add(tx);
       }
 
@@ -117,11 +120,17 @@ const getAddresses = async (xpub: string, count: number): Promise<{
       network: NETWORK,
       address: lockAddress,
       path,
-      index: lockHeight,
+      change_index: changeIndex,
+      address_index: lockHeight,
       used: true,
       balance,
       spendable
     };
+
+    if (addresses.has(lockAddress)) {
+      continue
+    }
+
     addresses.set(lockAddress, data);
 
     // If the lock is spendable, add its UTXOs to the unlock PSBT
@@ -142,6 +151,15 @@ const getAddresses = async (xpub: string, count: number): Promise<{
       const newLockTime = Math.max(unlockPsbt.locktime ?? 0, lockHeight);
       unlockPsbt.setLocktime(newLockTime);
     }
+  }
+
+  for (const tx of transactions) {
+    if (glacier.isLockTransaction(tx)) continue;
+    const vinAddress = tx.vin?.find(v => v.prevout?.scriptpubkey_type.includes("p2sh"))?.prevout?.scriptpubkey_address;
+    if (!vinAddress || !addresses.has(vinAddress)) continue;
+    const addressData = addresses.get(vinAddress);
+    if (!addressData) continue;
+    addresses.set(vinAddress, { ...addressData, unlock_tx: tx.txid });
   }
 
   let newLockPsbtHex: string | undefined;
@@ -192,12 +210,14 @@ const generateAddressHTML = (address: Address): string => {
   const explorerUrl = NETWORK === 'testnet4' ?
     `https://mempool.space/testnet4/address/${address.address}` :
     `https://mempool.space/address/${address.address}`;
-  const statusClass = address.spendable ? 'spendable' : 'locked';
-  const hiddenClass = address.used && address.spendable ? 'hidden' : '';
-  const statusText = address.spendable ? 'Spendable' : 'Locked';
+  const statusClass = !address.used ? 'active' : 'expired';
+  const hiddenClass = address.used && address.spendable && !address.balance ? 'hidden' : '';
+  const statusText = !address.used || !address.spendable ? 'Active' : address.change_index === 3 ? 'Expired' : 'Used';
   const balanceText = address.balance > 0 ? `${address.balance} sats` : '0 sats';
   const unlockTxLink = address.unlock_tx ?
-    `<p><a href="${address.unlock_tx}" target="_blank">Unlock Transaction</a></p>` : '';
+    `<p><a href="${NETWORK === 'testnet4' ?
+      `https://mempool.space/testnet4/tx/${address.unlock_tx}` :
+      `https://mempool.space/tx/${address.unlock_tx}`}" target="_blank">Unlock Transaction</a></p>` : '';
 
   return `
     <div class="address-card ${hiddenClass}">
@@ -311,11 +331,11 @@ const generateHTMLResponse = (xpub: string, addresses: Address[], newLockPsbt?: 
           font-weight: bold;
           text-transform: uppercase;
         }
-        .spendable {
+        .active {
           background-color: #d4edda;
           color: #155724;
         }
-        .locked {
+        .expired {
           background-color: #f8d7da;
           color: #721c24;
         }
@@ -356,6 +376,7 @@ const generateHTMLResponse = (xpub: string, addresses: Address[], newLockPsbt?: 
         ${addressCards ? `<div class="address-grid">${addressCards}</div>` : ''}
         ${psbtSection}
       </div>
+    <script src="https://opentimestamps.org/assets/javascripts/vendor/opentimestamps.min.js"></script>
     </body>
     </html>
   `;
@@ -396,8 +417,8 @@ app.get('/addresses', async (req: Request, res: Response) => {
       const tx = psbt.extractTransaction();
       await mempoolApi.broadcastTransaction(tx.toHex());
       addresses = addresses.map(address => {
-        if (address.spendable && address.balance > 0) {
-          return { ...address, balance: 0, unlock_tx: `https://mempool.space/testnet4/tx/${tx.getId()}` };
+        if (address.spendable && address.balance > 0 && address.change_index === 3) {
+          return { ...address, balance: 0, unlock_tx: tx.getId() };
         }
         return address;
       });
